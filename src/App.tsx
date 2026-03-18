@@ -28,14 +28,7 @@ export default function App() {
     loadAllData(p => {
       if (!cancelled) setProgress(p);
     })
-      .then(d => {
-        if (!cancelled) {
-          console.log('[DEBUG] creators:', d.creators.length, d.creators.map(c => ({ id: c.id, name: c.name, accts: c.socialAccountIds })));
-          console.log('[DEBUG] accounts:', d.accounts.length, d.accounts.map(a => ({ id: a.id, platform: a.platform, creatorIds: a.creatorIds })));
-          console.log('[DEBUG] snapshots:', d.snapshots.length, d.snapshots.slice(0, 3));
-          setData(d);
-        }
-      })
+      .then(d => { if (!cancelled) setData(d); })
       .catch(e => { if (!cancelled) setError(String(e)); });
 
     return () => { cancelled = true; };

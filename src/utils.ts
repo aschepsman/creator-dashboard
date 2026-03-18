@@ -103,8 +103,14 @@ function buildPlatformSeries(
   // (multiple accounts on same platform → sum followers per date)
   const byDate: Record<string, number> = {};
 
+  // Deduplicate by accountId + date before summing — guards against duplicate
+  // import runs creating multiple records for the same account/day.
+  const seen = new Set<string>();
   for (const snap of allSnapshots) {
     if (!accountIds.includes(snap.accountId)) continue;
+    const key = `${snap.accountId}|${snap.date}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     byDate[snap.date] = (byDate[snap.date] ?? 0) + snap.followers;
   }
 
