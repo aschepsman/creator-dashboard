@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Local env — never commit this, add token in Vercel dashboard instead
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+
+# Editor
+.DS_Store
+*.local
