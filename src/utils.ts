@@ -43,7 +43,8 @@ export function formatGain(n: number): string {
   return `${sign}${formatFollowers(n, 1)}`;
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: unknown): string {
+  if (typeof dateStr !== 'string' || !dateStr.includes('-')) return String(dateStr ?? '');
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString('en-US', {
     month: 'short',
@@ -51,7 +52,8 @@ export function formatDate(dateStr: string): string {
   });
 }
 
-export function formatDateLong(dateStr: string): string {
+export function formatDateLong(dateStr: unknown): string {
+  if (typeof dateStr !== 'string' || !dateStr.includes('-')) return String(dateStr ?? '');
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(y, (m ?? 1) - 1, d ?? 1).toLocaleDateString('en-US', {
     month: 'short',
