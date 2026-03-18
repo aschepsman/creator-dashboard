@@ -318,8 +318,8 @@ export default function Detail({ stats, onBack }: Props) {
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                       }}
                       labelFormatter={formatDateLong}
-                      formatter={(value: number | null, name: string) =>
-                        value != null ? [formatGain(value), name] : ['—', name]
+                      formatter={(value: unknown, name: string) =>
+                        value != null ? [formatGain(value as number), name] : ['—', name]
                       }
                     />
                     {visiblePlatforms.map(p => (
@@ -370,8 +370,8 @@ export default function Detail({ stats, onBack }: Props) {
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                       }}
                       labelFormatter={formatDateLong}
-                      formatter={(value: number | null, name: string) =>
-                        value != null ? [formatFollowers(value), name] : ['—', name]
+                      formatter={(value: unknown, name: string) =>
+                        value != null ? [formatFollowers(value as number), name] : ['—', name]
                       }
                     />
                     {visiblePlatforms.map(p => (
