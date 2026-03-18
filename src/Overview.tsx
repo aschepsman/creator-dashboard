@@ -13,11 +13,6 @@ interface Props {
   onRefresh:       () => void;
 }
 
-const SORT_OPTIONS: { key: SortKey; label: string }[] = [
-  { key: 'totalFollowers',    label: 'Total Followers' },
-  { key: 'sevenDayGain',      label: '7-Day Gain'      },
-  { key: 'thirtyDayGain',     label: '30-Day Gain'     },
-];
 
 function GainBadge({ value }: { value: number }) {
   if (value === 0) return <span className="text-slate-400 text-xs">—</span>;
@@ -47,24 +42,50 @@ function MomentumArrow({ gain }: { gain: number }) {
   return              <span className="text-slate-400 text-lg"     title="Flat">→</span>;
 }
 
+type SortDir = 'asc' | 'desc';
+
+function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
+  if (!active) return <span className="ml-1 text-slate-300">↕</span>;
+  return <span className="ml-1 text-indigo-500">{dir === 'asc' ? '↑' : '↓'}</span>;
+}
+
 export default function Overview({ allStats, onSelectCreator, onRefresh }: Props) {
-  const [sortKey, setSortKey]   = useState<SortKey>('totalFollowers');
-  const [search,  setSearch]    = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('totalFollowers');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [search,  setSearch]  = useState('');
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir(d => d === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortKey(key);
+      setSortDir(key === 'name' ? 'asc' : 'desc');
+    }
+  }
 
   const sorted = useMemo(() => {
     const filtered = allStats.filter(s =>
       s.creator.name.toLowerCase().includes(search.toLowerCase())
     );
     return [...filtered].sort((a, b) => {
-      const aVal = sortKey === 'sevenDayGain'   ? a.totalSevenDayGain
-                 : sortKey === 'thirtyDayGain'  ? a.totalThirtyDayGain
-                 : a.totalFollowers;
-      const bVal = sortKey === 'sevenDayGain'   ? b.totalSevenDayGain
-                 : sortKey === 'thirtyDayGain'  ? b.totalThirtyDayGain
-                 : b.totalFollowers;
-      return bVal - aVal;
+      let aVal: number | string;
+      let bVal: number | string;
+      if (sortKey === 'name') {
+        aVal = a.creator.name.toLowerCase();
+        bVal = b.creator.name.toLowerCase();
+      } else {
+        aVal = sortKey === 'sevenDayGain'  ? a.totalSevenDayGain
+             : sortKey === 'thirtyDayGain' ? a.totalThirtyDayGain
+             : a.totalFollowers;
+        bVal = sortKey === 'sevenDayGain'  ? b.totalSevenDayGain
+             : sortKey === 'thirtyDayGain' ? b.totalThirtyDayGain
+             : b.totalFollowers;
+      }
+      if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDir === 'asc' ?  1 : -1;
+      return 0;
     });
-  }, [allStats, sortKey, search]);
+  }, [allStats, sortKey, sortDir, search]);
 
   // Summary totals
   const grandTotal   = allStats.reduce((s, c) => s + c.totalFollowers,    0);
@@ -106,18 +127,6 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 hidden sm:block">Sort:</span>
-            <select
-              value={sortKey}
-              onChange={e => setSortKey(e.target.value as SortKey)}
-              className="text-sm border border-slate-200 rounded-lg px-2 py-1.5 bg-white
-                         text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.key} value={o.key}>{o.label}</option>
-              ))}
-            </select>
-
             <button
               onClick={onRefresh}
               title="Refresh data"
@@ -164,17 +173,29 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50">
-                <th className="text-left px-5 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">
-                  Creator
+                <th className="text-left px-5 py-3 text-xs uppercase tracking-wide">
+                  <button onClick={() => handleSort('name')}
+                    className="font-medium text-slate-500 hover:text-indigo-600 transition-colors flex items-center">
+                    Creator <SortIcon active={sortKey === 'name'} dir={sortDir} />
+                  </button>
                 </th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide hidden sm:table-cell">
-                  Total Followers
+                <th className="text-right px-4 py-3 text-xs uppercase tracking-wide hidden sm:table-cell">
+                  <button onClick={() => handleSort('totalFollowers')}
+                    className="font-medium text-slate-500 hover:text-indigo-600 transition-colors flex items-center ml-auto">
+                    Total Followers <SortIcon active={sortKey === 'totalFollowers'} dir={sortDir} />
+                  </button>
                 </th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">
-                  7D Gain
+                <th className="text-right px-4 py-3 text-xs uppercase tracking-wide">
+                  <button onClick={() => handleSort('sevenDayGain')}
+                    className="font-medium text-slate-500 hover:text-indigo-600 transition-colors flex items-center ml-auto">
+                    7D Gain <SortIcon active={sortKey === 'sevenDayGain'} dir={sortDir} />
+                  </button>
                 </th>
-                <th className="text-right px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide hidden md:table-cell">
-                  30D Gain
+                <th className="text-right px-4 py-3 text-xs uppercase tracking-wide hidden md:table-cell">
+                  <button onClick={() => handleSort('thirtyDayGain')}
+                    className="font-medium text-slate-500 hover:text-indigo-600 transition-colors flex items-center ml-auto">
+                    30D Gain <SortIcon active={sortKey === 'thirtyDayGain'} dir={sortDir} />
+                  </button>
                 </th>
                 <th className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide hidden lg:table-cell w-32">
                   30D Trend

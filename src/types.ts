@@ -59,5 +59,5 @@ export interface AppData {
   snapshots: DailySnapshot[];
 }
 
-export type SortKey = 'totalFollowers' | 'sevenDayGain' | 'thirtyDayGain';
+export type SortKey = 'name' | 'totalFollowers' | 'sevenDayGain' | 'thirtyDayGain';
 export type DaysOption = 30 | 90 | 182 | 365 | null;
