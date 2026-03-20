@@ -50,7 +50,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 }
 
 export default function Overview({ allStats, onSelectCreator, onRefresh }: Props) {
-  const [sortKey, setSortKey] = useState<SortKey>('totalFollowers');
+  const [sortKey, setSortKey] = useState<SortKey>('thirtyDayGain');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search,  setSearch]  = useState('');
 
