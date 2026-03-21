@@ -94,6 +94,40 @@ function gainOverDays(snaps: DailySnapshot[], days: number): number {
   return inRange[inRange.length - 1]!.followers - inRange[0]!.followers;
 }
 
+// ─── Gap interpolation ─────────────────────────────────────────────────────
+// When consecutive snapshots have missing dates in between, linearly
+// interpolate the follower count for each missing day so the delta chart
+// shows a smooth distribution instead of a single spike.
+
+function interpolateMissingDays(snaps: DailySnapshot[]): DailySnapshot[] {
+  if (snaps.length < 2) return snaps;
+
+  const sorted = [...snaps].sort((a, b) => a.date.localeCompare(b.date));
+  const result: DailySnapshot[] = [sorted[0]!];
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = sorted[i - 1]!;
+    const curr = sorted[i]!;
+
+    const prevMs  = new Date(prev.date + 'T00:00:00').getTime();
+    const currMs  = new Date(curr.date + 'T00:00:00').getTime();
+    const daysDiff = Math.round((currMs - prevMs) / 86_400_000);
+
+    // Fill each missing day with a linearly interpolated count
+    if (daysDiff > 1) {
+      for (let d = 1; d < daysDiff; d++) {
+        const ms       = prevMs + d * 86_400_000;
+        const dateStr  = new Date(ms).toISOString().split('T')[0]!;
+        const interp   = Math.round(prev.followers + (curr.followers - prev.followers) * d / daysDiff);
+        result.push({ date: dateStr, followers: interp, accountId: curr.accountId, platform: curr.platform });
+      }
+    }
+    result.push(curr);
+  }
+
+  return result;
+}
+
 // ─── Build per-platform series ─────────────────────────────────────────────
 
 function buildPlatformSeries(
@@ -124,12 +158,13 @@ function buildPlatformSeries(
     platform,
   }));
 
-  const cleaned = cleanSnapshotsForAccount(rawSnaps);
-  const current = cleaned.length > 0 ? cleaned[cleaned.length - 1]!.followers : 0;
+  const cleaned      = cleanSnapshotsForAccount(rawSnaps);
+  const interpolated = interpolateMissingDays(cleaned);
+  const current      = interpolated.length > 0 ? interpolated[interpolated.length - 1]!.followers : 0;
 
   return {
     platform,
-    snapshots:        cleaned,
+    snapshots:        interpolated,
     currentFollowers: current,
     sevenDayGain:     gainOverDays(cleaned, 7),
     thirtyDayGain:    gainOverDays(cleaned, 30),
