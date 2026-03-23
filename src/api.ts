@@ -101,8 +101,12 @@ function parseCreators(raw: RawRecord[]): Creator[] {
 
       const linked = r.fields['Social Accounts'] as string[] | null;
 
-      const statusRaw = r.fields['Status'] as { name: string } | null;
-      const status    = (statusRaw?.name ?? '') as 'Client' | 'Watchlist' | '';
+      const statusRaw = r.fields['Status'] as { name: string } | string | null;
+      const status    = (
+        typeof statusRaw === 'object' && statusRaw !== null
+          ? statusRaw.name
+          : String(statusRaw ?? '')
+      ) as 'Client' | 'Watchlist' | '';
 
       return {
         id:               r.id,
