@@ -101,10 +101,14 @@ function parseCreators(raw: RawRecord[]): Creator[] {
 
       const linked = r.fields['Social Accounts'] as string[] | null;
 
+      const statusRaw = r.fields['Status'] as { name: string } | null;
+      const status    = (statusRaw?.name ?? '') as 'Client' | 'Watchlist' | '';
+
       return {
         id:               r.id,
         name,
         socialAccountIds: linked ?? [],
+        status,
       };
     })
     .filter(c => c.name && c.socialAccountIds.length > 0);
@@ -176,7 +180,7 @@ export async function loadAllData(
 
   // 1. Creators
   onProgress({ stage: 'Loading creators…', loaded: 0, total: 1 });
-  const rawCreators = await fetchAllRecords(T_CREATORS, ['Creator Name', 'Social Accounts'], token);
+  const rawCreators = await fetchAllRecords(T_CREATORS, ['Creator Name', 'Social Accounts', 'Status'], token);
   const creators    = parseCreators(rawCreators);
   onProgress({ stage: 'Loading creators…', loaded: 1, total: 1 });
 

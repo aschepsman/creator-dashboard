@@ -11,6 +11,7 @@ export interface Creator {
   id: string;
   name: string;
   socialAccountIds: string[]; // linked record IDs into Social Accounts table
+  status: 'Client' | 'Watchlist' | '';
 }
 
 export interface SocialAccount {

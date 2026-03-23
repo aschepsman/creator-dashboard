@@ -49,10 +49,22 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   return <span className="ml-1 text-indigo-500">{dir === 'asc' ? '↑' : '↓'}</span>;
 }
 
+type Tab = 'Client' | 'Watchlist';
+
 export default function Overview({ allStats, onSelectCreator, onRefresh }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('thirtyDayGain');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search,  setSearch]  = useState('');
+  const [activeTab, setActiveTab] = useState<Tab>('Client');
+
+  // Clients = explicitly tagged Client OR untagged (existing roster)
+  // Watchlist = explicitly tagged Watchlist only
+  const tabStats = useMemo(() => ({
+    Client:    allStats.filter(s => s.creator.status !== 'Watchlist'),
+    Watchlist: allStats.filter(s => s.creator.status === 'Watchlist'),
+  }), [allStats]);
+
+  const activeStats = tabStats[activeTab];
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -64,7 +76,7 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
   }
 
   const sorted = useMemo(() => {
-    const filtered = allStats.filter(s =>
+    const filtered = activeStats.filter(s =>
       s.creator.name.toLowerCase().includes(search.toLowerCase())
     );
     return [...filtered].sort((a, b) => {
@@ -85,11 +97,11 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
       if (aVal > bVal) return sortDir === 'asc' ?  1 : -1;
       return 0;
     });
-  }, [allStats, sortKey, sortDir, search]);
+  }, [activeStats, sortKey, sortDir, search]);
 
-  // Summary totals
-  const grandTotal   = allStats.reduce((s, c) => s + c.totalFollowers,    0);
-  const grandSevenDay = allStats.reduce((s, c) => s + c.totalSevenDayGain, 0);
+  // Summary totals — scoped to active tab
+  const grandTotal    = activeStats.reduce((s, c) => s + c.totalFollowers,    0);
+  const grandSevenDay = activeStats.reduce((s, c) => s + c.totalSevenDayGain, 0);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -148,7 +160,7 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
             <div className="text-xs text-slate-500 mb-1">Creators tracked</div>
-            <div className="text-2xl font-bold text-slate-800">{allStats.length}</div>
+            <div className="text-2xl font-bold text-slate-800">{activeStats.length}</div>
           </div>
           <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
             <div className="text-xs text-slate-500 mb-1">Total followers</div>
@@ -163,9 +175,29 @@ export default function Overview({ allStats, onSelectCreator, onRefresh }: Props
           <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
             <div className="text-xs text-slate-500 mb-1">Accounts tracked</div>
             <div className="text-2xl font-bold text-slate-800">
-              {allStats.reduce((s, c) => s + c.accounts.length, 0)}
+              {activeStats.reduce((s, c) => s + c.accounts.length, 0)}
             </div>
           </div>
+        </div>
+
+        {/* ── Tabs ─────────────────────────────────────────────────── */}
+        <div className="flex gap-1 border-b border-slate-200">
+          {(['Client', 'Watchlist'] as Tab[]).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors
+                ${activeTab === tab
+                  ? 'bg-white border border-b-white border-slate-200 -mb-px text-indigo-600'
+                  : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              {tab}
+              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full
+                ${activeTab === tab ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                {tabStats[tab].length}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* ── Creator table ─────────────────────────────────────────── */}
