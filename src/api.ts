@@ -132,6 +132,7 @@ function parseSocialAccounts(raw: RawRecord[]): SocialAccount[] {
       label:      (r.fields['Social Account ID'] as string) ?? '',
       platform:   platform || 'Unknown',
       handle:     (r.fields['Handle'] as string) ?? '',
+      profileUrl: (r.fields['Profile URL'] as string) ?? '',
       creatorIds: creatorLinked ?? [],
     };
   });
@@ -192,7 +193,7 @@ export async function loadAllData(
   onProgress({ stage: 'Loading social accounts…', loaded: 0, total: 1 });
   const rawAccounts = await fetchAllRecords(
     T_SOCIAL_ACCOUNTS,
-    ['Social Account ID', 'Platform', 'Handle', 'Creator'],
+    ['Social Account ID', 'Platform', 'Handle', 'Creator', 'Profile URL'],
     token
   );
   const accounts = parseSocialAccounts(rawAccounts);

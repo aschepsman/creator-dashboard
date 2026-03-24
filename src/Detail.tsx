@@ -451,6 +451,30 @@ export default function Detail({ stats, onBack }: Props) {
                     </div>
                   ))}
                 </div>
+
+                {/* Account profile links */}
+                <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                  {stats.accounts
+                    .filter(a => a.platform === p && a.profileUrl)
+                    .map(a => (
+                      <a
+                        key={a.id}
+                        href={a.profileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={e => e.stopPropagation()}
+                        className="flex items-center gap-1 text-xs text-slate-500 hover:text-indigo-600
+                                   transition-colors px-2 py-1 rounded-md bg-slate-50 hover:bg-indigo-50"
+                      >
+                        <span>@{a.handle}</span>
+                        <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ))
+                  }
+                </div>
               </div>
             );
           })}

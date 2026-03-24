@@ -19,6 +19,7 @@ export interface SocialAccount {
   label: string;       // "Social Account ID" text field, e.g. "Burrata Babe - Instagram"
   platform: string;    // 'Instagram' | 'TikTok' | 'YouTube'
   handle: string;
+  profileUrl: string;
   creatorIds: string[];
 }
 
