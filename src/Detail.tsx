@@ -22,6 +22,7 @@ interface Props {
 }
 
 const DATE_RANGES: { label: string; days: DaysOption }[] = [
+  { label: '7D',   days: 7    },
   { label: '30D',  days: 30   },
   { label: '90D',  days: 90   },
   { label: '6M',   days: 182  },

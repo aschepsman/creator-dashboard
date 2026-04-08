@@ -62,4 +62,4 @@ export interface AppData {
 }
 
 export type SortKey = 'name' | 'totalFollowers' | 'sevenDayGain' | 'thirtyDayGain';
-export type DaysOption = 30 | 90 | 182 | 365 | null;
+export type DaysOption = 7 | 30 | 90 | 182 | 365 | null;
