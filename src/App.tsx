@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { loadAllData, type LoadProgress } from './api';
+import { loadAllData, clearCache, type LoadProgress } from './api';
 import { buildCreatorStats } from './utils';
 import type { AppData, CreatorStats } from './types';
 import Loading  from './Loading';
@@ -45,7 +45,7 @@ export default function App() {
   // ── Navigation helpers ─────────────────────────────────────────────────
   const goToDetail  = useCallback((creatorId: string) => setView({ kind: 'detail', creatorId }), []);
   const goToOverview = useCallback(() => setView({ kind: 'overview' }), []);
-  const retry       = useCallback(() => setLoadKey(k => k + 1), []);
+  const retry       = useCallback(() => { clearCache(); setLoadKey(k => k + 1); }, []);
 
   // ── Render ─────────────────────────────────────────────────────────────
   if (error || !data) {

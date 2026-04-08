@@ -170,6 +170,22 @@ function parseSnapshots(raw: RawRecord[]): DailySnapshot[] {
   return results;
 }
 
+// ─── Session cache ─────────────────────────────────────────────────────────
+
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
+interface Cache {
+  data: { creators: Creator[]; accounts: SocialAccount[]; snapshots: DailySnapshot[] };
+  loadedAt: number;
+}
+
+let cache: Cache | null = null;
+
+/** Call this before triggering a manual refresh so stale data isn't served. */
+export function clearCache(): void {
+  cache = null;
+}
+
 // ─── Main load function ────────────────────────────────────────────────────
 
 export interface LoadProgress {
@@ -178,35 +194,57 @@ export interface LoadProgress {
   total: number;
 }
 
+// Only fetch snapshots within this window — keeps the payload bounded as
+// daily scrapes accumulate. Matches the longest view option (1Y) plus buffer.
+const SNAPSHOT_DAYS = 400;
+
 export async function loadAllData(
   onProgress: (p: LoadProgress) => void
 ): Promise<{ creators: Creator[]; accounts: SocialAccount[]; snapshots: DailySnapshot[] }> {
+
+  // ── Return cached data if still fresh ──────────────────────────────────
+  if (cache && Date.now() - cache.loadedAt < CACHE_TTL_MS) {
+    onProgress({ stage: 'Ready', loaded: 1, total: 1 });
+    return cache.data;
+  }
+
   const token = getToken();
 
-  // 1. Creators
-  onProgress({ stage: 'Loading creators…', loaded: 0, total: 1 });
-  const rawCreators = await fetchAllRecords(T_CREATORS, ['Creator Name', 'Social Accounts', 'Status'], token);
-  const creators    = parseCreators(rawCreators);
-  onProgress({ stage: 'Loading creators…', loaded: 1, total: 1 });
+  // ── Date cutoff for performance records ────────────────────────────────
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - SNAPSHOT_DAYS);
+  const cutoff = cutoffDate.toISOString().split('T')[0]!;
 
-  // 2. Social Accounts
-  onProgress({ stage: 'Loading social accounts…', loaded: 0, total: 1 });
-  const rawAccounts = await fetchAllRecords(
-    T_SOCIAL_ACCOUNTS,
-    ['Social Account ID', 'Platform', 'Handle', 'Creator', 'Profile URL'],
-    token
-  );
-  const accounts = parseSocialAccounts(rawAccounts);
-  onProgress({ stage: 'Loading social accounts…', loaded: 1, total: 1 });
+  // ── Fetch all three tables in parallel ─────────────────────────────────
+  // Creators and Social Accounts are small — no progress needed.
+  // Performance is the bulk fetch; its progress drives the loading indicator.
+  onProgress({ stage: 'Loading performance history…', loaded: 0, total: 1 });
 
-  // 3. Performance data — this is the bulk (7K+ records)
-  const rawSnaps = await fetchAllRecords(
-    T_PERFORMANCE,
-    ['Snapshot Date', 'Followers', 'Platform', 'Social Account'],
-    token,
-    (loaded, total) => onProgress({ stage: 'Loading performance history…', loaded, total })
-  );
+  const [rawCreators, rawAccounts, rawSnaps] = await Promise.all([
+    fetchAllRecords(
+      T_CREATORS,
+      ['Creator Name', 'Social Accounts', 'Status'],
+      token
+    ),
+    fetchAllRecords(
+      T_SOCIAL_ACCOUNTS,
+      ['Social Account ID', 'Platform', 'Handle', 'Creator', 'Profile URL'],
+      token
+    ),
+    fetchAllRecords(
+      T_PERFORMANCE,
+      ['Snapshot Date', 'Followers', 'Platform', 'Social Account'],
+      token,
+      (loaded, total) => onProgress({ stage: 'Loading performance history…', loaded, total }),
+      { filterByFormula: `{Snapshot Date} >= "${cutoff}"` }
+    ),
+  ]);
+
+  const creators  = parseCreators(rawCreators);
+  const accounts  = parseSocialAccounts(rawAccounts);
   const snapshots = parseSnapshots(rawSnaps);
 
-  return { creators, accounts, snapshots };
+  const result = { creators, accounts, snapshots };
+  cache = { data: result, loadedAt: Date.now() };
+  return result;
 }
